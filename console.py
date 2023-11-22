@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """ Console Module """
 import cmd
+from shlex import split
+import re
 import sys
 from models.base_model import BaseModel
 from models.__init__ import storage
@@ -115,34 +117,41 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-         arg = args.split()
+        pattern = """(^\w+)((?:\s+\w+=[^\s]+)+)?"""
+        m = re.match(pattern, args)
+        args = [s for s in m.groups() if s] if m else []
+
         if not args:
             print("** class name missing **")
             return
-        elif arg[0] not in HBNBCommand.classes:
+
+        className = args[0]
+
+        if className not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
 
-        new_instance = eval(arg[0])()
-        arg.pop(0)
-        for item in arg:
-            item = item.split('=')
-            if len(item) != 2:
-                continue
-            key = item[0]
-            value = item[1]
-            value = self.check_value_type(value)
-            if value is None:
-                continue
-            else:
-                setattr(new_instance, key, value)
-        storage.new(new_instance)
-        storage.save()
+        kwargs = dict()
+        if len(args) > 1:
+            params = args[1].split(" ")
+            params = [param for param in params if param]
+            for param in params:
+                [name, value] = param.split("=")
+                if value[0] == '"' and value[-1] == '"':
+                    value = value[1:-1].replace('_', ' ')
+                elif '.' in value:
+                    value = float(value)
+                else:
+                    value = int(value)
+                kwargs[name] = value
+
+        new_instance = HBNBCommand.classes[className]()
+        
+        for attrName, attrValue in kwargs.items():
+            setattr(new_instance, attrName, attrValue) 
+
+        new_instance.save()
         print(new_instance.id)
-        except SyntaxError:
-            print("** class name missing **")
-        except KeyError:
-            print("** class doesn't exist **")
 
     def help_create(self):
         """ Help information for the create method """
@@ -215,23 +224,28 @@ class HBNBCommand(cmd.Cmd):
         print("Destroys an individual instance of a class")
         print("[Usage]: destroy <className> <objectId>\n")
 
-    def do_all(self, args):
+    def do_all(self, arg):
         """ Shows all objects, or all objects of a class"""
-        print_list = []
-
-        if args:
-            args = args.split(' ')[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
-                print("** class doesn't exist **")
-                return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
+        args = split(arg)
+        all_objs = storage.all()
+        if len(args) == 0:
+            print([str(obj) for obj in all_objs.items()])
+        elif args[0] not in self.classes:
+            print("** class doesn't exist **")
         else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
-
-        print(print_list)
+            if arg[0].endswith('.all'):
+                class_name = arg[0].split(".")[0]
+                class_objs = [
+                    value for key, value in all_objs.items()
+                    if key.startswith(class_name)]
+                strs = [str(obj) for obj in class_objs]
+                print(strs)
+            else:
+                class_objs = [
+                    value for key, value in all_objs.items()
+                    if key.startswith(arg[0])]
+                strs = [str(obj) for obj in class_objs]
+                print(strs)
 
     def help_all(self):
         """ Help information for the all command """

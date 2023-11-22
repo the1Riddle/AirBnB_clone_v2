@@ -3,6 +3,7 @@
 """db storage"""
 
 from models.base_model import Base
+from models.base_model import BaseModel
 from models.state import State
 from models.city import City
 from models.user import User
@@ -21,6 +22,7 @@ class DBStorage():
 
     def __init__(self):
         """instantiation"""
+        env = getenv("HBNB_ENV")
         self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'
                                       .format(getenv("HBNB_MYSQL_USER"),
                                               getenv("HBNB_MYSQL_PWD"),
@@ -42,7 +44,7 @@ class DBStorage():
                     object_key = '{}.{}'.format(obj.__class__.name__, obj.id)
                     objs[object_key] = obj
         else:
-             query = self.__session.query(cls)
+            query = self.__session.query(cls)
             for obj in query.all():
                 object_key = '{}.{}'.format(obj.__class__.__name__, obj.id)
                 objs[object_key] = obj
