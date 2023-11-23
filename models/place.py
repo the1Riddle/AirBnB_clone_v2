@@ -33,6 +33,7 @@ class Place(BaseModel, Base):
       Inherits from SQLAlchemy Base and links to the MySQL table places
     """
     __tablename__ = "places"
+    """ the definitions of tables columns """
     city_id = Column(String(60), ForeignKey("cities.id"), nullable=False)
     user_id = Column(String(60), ForeignKey("users.id"), nullable=False)
     name = Column(String(128), nullable=False)
