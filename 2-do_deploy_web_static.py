@@ -27,5 +27,5 @@ def do_deploy(archive_path):
         run('ln -s {}{}/ /data/web_static/current'.format(path, no_ext))
         return True
     except:
-        print('File does not exist')
+        """print('File does not exist')"""
         return False
